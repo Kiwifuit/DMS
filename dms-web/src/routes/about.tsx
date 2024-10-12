@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { getBackendVersion } from "~/rust/ffi";
+import { sum } from "~/backend";
 
 export default function Test() {
   return (
@@ -12,5 +12,5 @@ export default function Test() {
 
 function getVersionDummy(): string {
   console.log("this runs");
-  return getBackendVersion();
+  return sum(1, 3).toString();
 }
