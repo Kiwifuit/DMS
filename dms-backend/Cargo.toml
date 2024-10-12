@@ -1,9 +1,16 @@
 [package]
-name = "dms-backend"
-version = "0.1.0"
 edition = "2021"
+name = "dms_backend"
+version = "0.0.0"
+
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2.12.2", default-features = false, features = ["napi4"] }
+napi-derive = "2.12.2"
+
 denji = { path = "../denji", optional = true }
 packparse = { path = "../packparse", optional = true }
 modparser = { path = "../modparser", optional = true }
@@ -23,12 +30,9 @@ chrono = { version = "0.4.38", default-features = false, features = [
 ] }
 
 [build-dependencies]
+napi-build = "2.0.1"
 anyhow.workspace = true
 lazy_static = "1.5.0"
-
-[lib]
-name = "dmsb"
-crate-type = ["cdylib", "rlib"]
 
 [lints]
 workspace = true

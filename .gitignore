@@ -5,3 +5,7 @@ target/
 **/*.so
 **/*.dll
 **/*.dylib
+
+# TODO: Delete this line once
+# we fully migrate to napi:
+dms-backend.2/

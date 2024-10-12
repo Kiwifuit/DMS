@@ -1,3 +1,4 @@
+extern crate napi_build;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -66,6 +67,7 @@ fn main() -> anyhow::Result<()> {
     FEATURES.join(",")
   });
 
+  napi_build::setup();
   Ok(())
 }
 
