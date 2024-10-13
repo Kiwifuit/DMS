@@ -1,9 +1,14 @@
-#![deny(clippy::all)]
+pub fn add(left: u64, right: u64) -> u64 {
+    left + right
+}
 
-#[macro_use]
-extern crate napi_derive;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[napi]
-pub fn sum(a: i32, b: i32) -> i32 {
-  a + b
+    #[test]
+    fn it_works() {
+        let result = add(2, 2);
+        assert_eq!(result, 4);
+    }
 }
