@@ -1,7 +1,6 @@
 {
   "recommendations": [
     // Typescript / DMS Web
-    "oven.bun-vscode",
     "ms-vscode.vscode-typescript-next",
     "bradlc.vscode-tailwindcss",
     "stivo.tailwind-fold",

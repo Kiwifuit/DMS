@@ -12,7 +12,6 @@
     "noEmit": true,
     "types": [
       "vinxi/types/client",
-      "bun-types"
     ],
     "isolatedModules": true,
     "paths": {
