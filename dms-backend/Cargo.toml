@@ -4,6 +4,44 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+axum = "0.7.7"
+denji = { path = "../denji", optional = true }
+packparse = { path = "../packparse", optional = true }
+modparser = { path = "../modparser", optional = true }
+
+modrinth = { path = "../modrinth", optional = true }
+hangar = { path = "../hangar", optional = true }
+
+temp-dir = { workspace = true, optional = true }
+log = { workspace = true, features = ["serde"] }
+# serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+chrono = { version = "0.4.38", default-features = false, features = [
+  "std",
+  "clock",
+] }
+
+[build-dependencies]
+anyhow.workspace = true
+lazy_static = "1.5.0"
 
 [lints]
 workspace = true
+
+[features]
+default = []
+
+all-providers = ["provider-modrinth", "provider-hangar", "provider-curse"]
+provider-modrinth = ["dep:modrinth"]
+provider-hangar = ["dep:hangar"]
+provider-curse = []
+
+all-parsers = ["parser-modpack", "parser-modjar"]
+parser-modpack = ["dep:packparse"]
+parser-modjar = ["dep:modparser"]
+
+server-utils = ["dep:denji", "dep:temp-dir"]
+
+dms = ["all-providers", "all-parsers", "server-utils"]
