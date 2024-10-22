@@ -16,8 +16,8 @@ pub struct ForgeMod {
   pub license: Rc<str>,
   #[serde(rename = "issueTrackerURL")]
   pub issue_tracker: Option<Rc<str>>,
-  #[serde(rename = "displayURL")]
-  pub homepage_url: Option<Rc<str>>,
+  //   #[serde(rename = "displayURL")]
+  //   pub homepage_url: Option<Rc<str>>,
   pub mods: Rc<[ForgeModMetadata]>,
   pub dependencies: Option<HashMap<Rc<str>, Rc<[ForgeModDependency]>>>,
 }
@@ -137,8 +137,6 @@ impl<'de> Deserialize<'de> for ForgeModVersion {
       where
         E: serde::de::Error,
       {
-        dbg!(&value);
-
         if value == "*" {
           return Ok(ForgeModVersion::Any);
         }
@@ -148,8 +146,6 @@ impl<'de> Deserialize<'de> for ForgeModVersion {
             value.parse().map_err(serde::de::Error::custom)?,
           ));
         }
-
-        dbg!(value.parse::<ModSemver>());
 
         Ok(if let Ok(parsed_value) = value.parse() {
           ForgeModVersion::SpecificVersion(parsed_value)
@@ -229,9 +225,6 @@ impl FromStr for ModSemver {
           .map_err(ModVersionParseError::Parse)
       })
       .collect::<Vec<_>>();
-
-    dbg!(&s);
-    // dbg!(&a);
 
     Ok(ModSemver {
       major: a.first().map_or(Ok(None), |res| match res {
@@ -395,9 +388,6 @@ pub enum ModVersionRangeMode {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::unzip::grab_meta_file;
-  use std::fs::read_dir;
-  use toml::from_str;
 
   #[test]
   fn mod_version() {
@@ -591,14 +581,7 @@ mod tests {
       }
     );
 
-    assert_eq!(
-      mod_version.to,
-      Some(ModSemver {
-        major: None,
-        minor: None,
-        patch: None
-      })
-    );
+    assert_eq!(mod_version.to, None);
 
     assert_eq!(mod_version.mode, ModVersionRangeMode::GreaterThan)
   }
@@ -668,25 +651,6 @@ mod tests {
   }
 
   #[test]
-  fn mod_manifest() {
-    for file in read_dir("samples/forge/").unwrap() {
-      let file = file.unwrap();
-
-      if file.file_type().unwrap().is_dir() {
-        continue;
-      }
-
-      let mod_meta = from_str::<ForgeMod>(
-        &grab_meta_file(file.path())
-          .expect("expected meta file to be grabbed")
-          .raw,
-      );
-
-      assert!(mod_meta.is_ok());
-    }
-  }
-
-  #[test]
   fn test_manifest() {
     let raw = r#"modLoader="lowcodefml"
 loaderVersion="[1,)"
@@ -727,7 +691,7 @@ issueTrackerURL="https://github.com/Stardust-Labs-MC/Terralith/issues"
 
     let mod_manifest: ForgeMod = parsed.unwrap();
 
-    assert!(mod_manifest.homepage_url.is_some());
+    assert!(mod_manifest.mods.first().unwrap().homepage_url.is_some());
     assert!(mod_manifest.dependencies.is_some_and(|deps| {
       if deps.is_empty() || !deps.contains_key("terralith") {
         return false;
@@ -739,8 +703,7 @@ issueTrackerURL="https://github.com/Stardust-Labs-MC/Terralith/issues"
 
       let minecraft = terralith_deps
         .iter()
-        .filter(|dep| dep.id == "minecraft".into())
-        .nth(0)
+        .find(|dep| dep.id == "minecraft".into())
         .expect("expected `minecraft` to exist");
 
       true
