@@ -1,6 +1,14 @@
 [workspace]
 resolver = "2"
-members = ["denji", "hangar", "mar", "modparser", "modrinth", "mparse"]
+members = [
+  "curseforge",
+  "denji",
+  "hangar",
+  "mar",
+  "modparser",
+  "modrinth",
+  "mparse",
+]
 
 [workspace.dependencies]
 log = "0.4.21"

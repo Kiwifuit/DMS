@@ -2,3 +2,5 @@ target/
 **/samples/
 **/.env
 **/node_modules
+
+**/*.so
