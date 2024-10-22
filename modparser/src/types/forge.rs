@@ -26,7 +26,7 @@ pub struct ForgeMod {
 pub struct ForgeModMetadata {
   #[serde(rename = "modId")]
   pub id: Rc<str>,
-  pub version: Rc<str>,
+  pub version: ModSemver,
   #[serde(rename = "displayName")]
   pub display_name: Rc<str>,
   pub authors: Option<ForgeModAuthors>,
@@ -48,8 +48,8 @@ pub struct ForgeModDependency {
   pub mandatory: bool,
   #[serde(rename = "versionRange")]
   pub version_range: ForgeModVersion,
-  pub ordering: Option<Rc<str>>,
-  pub side: Option<Rc<str>>,
+  //   pub ordering: Option<Rc<str>>,
+  //   pub side: Option<Rc<str>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -76,6 +76,7 @@ pub enum ForgeModAuthors {
 #[derive(Debug)]
 pub enum ForgeModVersion {
   Any,
+  Custom(Rc<str>),
   VersionRange(ModVersionRange),
   SpecificVersion(ModSemver),
 }
@@ -111,6 +112,7 @@ impl ForgeModVersion {
   pub fn satisfies(&self, version: &ModSemver) -> bool {
     match &self {
       ForgeModVersion::Any => true,
+      ForgeModVersion::Custom(version) => !version.is_empty(),
       ForgeModVersion::SpecificVersion(this_version) => this_version == version,
       ForgeModVersion::VersionRange(range) => range.within_range(version),
     }
@@ -135,19 +137,25 @@ impl<'de> Deserialize<'de> for ForgeModVersion {
       where
         E: serde::de::Error,
       {
+        dbg!(&value);
+
         if value == "*" {
           return Ok(ForgeModVersion::Any);
         }
 
         if value.starts_with('[') {
-          return Ok(ForgeModVersion::SpecificVersion(
+          return Ok(ForgeModVersion::VersionRange(
             value.parse().map_err(serde::de::Error::custom)?,
           ));
         }
 
-        Ok(ForgeModVersion::SpecificVersion(
-          value.parse().map_err(serde::de::Error::custom)?,
-        ))
+        dbg!(value.parse::<ModSemver>());
+
+        Ok(if let Ok(parsed_value) = value.parse() {
+          ForgeModVersion::SpecificVersion(parsed_value)
+        } else {
+          ForgeModVersion::Custom(Rc::from(value))
+        })
 
         // match value {
         //   "*" => Ok(ForgeModVersion::Any),
@@ -191,8 +199,21 @@ impl<'de> Deserialize<'de> for ModSemver {
   where
     D: Deserializer<'de>,
   {
-    let mod_data = String::deserialize(deserializer)?;
-    mod_data.parse().map_err(serde::de::Error::custom)
+    let mut mod_data = String::deserialize(deserializer)?;
+
+    assert!(!mod_data.is_empty());
+    let processed_mod_data = mod_data
+      .contains("-")
+      .then(|| {
+        let sep_char = mod_data
+          .find("-")
+          .expect("expected a `-` to exist since this passed");
+
+        mod_data.split_off(sep_char)
+      })
+      .unwrap_or(mod_data);
+
+    processed_mod_data.parse().map_err(serde::de::Error::custom)
   }
 }
 
@@ -206,14 +227,27 @@ impl FromStr for ModSemver {
         component
           .parse::<u32>()
           .map_err(ModVersionParseError::Parse)
-        // .map(|num| if num == 0 { None } else { Some(num) })
       })
-      .collect::<Vec<Result<u32, ModVersionParseError>>>();
+      .collect::<Vec<_>>();
+
+    dbg!(&s);
+    // dbg!(&a);
 
     Ok(ModSemver {
-      major: a.first().and_then(|some_case| some_case.to_owned().ok()),
-      minor: a.get(1).and_then(|some_case| some_case.to_owned().ok()),
-      patch: a.get(2).and_then(|some_case| some_case.to_owned().ok()),
+      major: a.first().map_or(Ok(None), |res| match res {
+        Ok(num) => Ok(Some(*num)),
+        Err(err) => Err(err.clone()),
+      })?,
+
+      minor: a.get(1).map_or(Ok(None), |res| match res {
+        Ok(num) => Ok(Some(*num)),
+        Err(err) => Err(err.clone()),
+      })?,
+
+      patch: a.get(2).map_or(Ok(None), |res| match res {
+        Ok(num) => Ok(Some(*num)),
+        Err(err) => Err(err.clone()),
+      })?,
     })
   }
 }
@@ -650,5 +684,66 @@ mod tests {
 
       assert!(mod_meta.is_ok());
     }
+  }
+
+  #[test]
+  fn test_manifest() {
+    let raw = r#"modLoader="lowcodefml"
+loaderVersion="[1,)"
+license="Stardust Labs License"
+issueTrackerURL="https://github.com/Stardust-Labs-MC/Terralith/issues"
+
+[[mods]]
+    modId="terralith"
+    version="2.5.4"
+    displayName="Terralith"
+    displayURL="https://www.stardustlabs.net/"
+    logoFile="pack.png"
+    authors="Stardust Labs"
+    credits="Starmute: Owner. catter1: Maintainer. TheKingWhale: Builder. Apollounknowndev: Maintainer"
+    description="Explore almost 100 new biomes consisting of both realism and light fantasy, using just Vanilla blocks. Complete with several immersive structures to compliment the overhauled terrain."
+
+[[dependencies.terralith]]
+    modId="forge"
+    mandatory=false
+    versionRange="[46,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.terralith]]
+    modId="neoforge"
+    mandatory=false
+    versionRange="[20.2,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.terralith]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20,1.21)"
+    ordering="NONE"
+    side="BOTH""#;
+    let parsed = toml::from_str(raw);
+
+    assert!(parsed.is_ok());
+
+    let mod_manifest: ForgeMod = parsed.unwrap();
+
+    assert!(mod_manifest.homepage_url.is_some());
+    assert!(mod_manifest.dependencies.is_some_and(|deps| {
+      if deps.is_empty() || !deps.contains_key("terralith") {
+        return false;
+      }
+
+      let terralith_deps = deps
+        .get("terralith")
+        .expect("expected `terralith` to exist");
+
+      let minecraft = terralith_deps
+        .iter()
+        .filter(|dep| dep.id == "minecraft".into())
+        .nth(0)
+        .expect("expected `minecraft` to exist");
+
+      true
+    }))
   }
 }
