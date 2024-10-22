@@ -701,12 +701,13 @@ issueTrackerURL="https://github.com/Stardust-Labs-MC/Terralith/issues"
         .get("terralith")
         .expect("expected `terralith` to exist");
 
-      let minecraft = terralith_deps
+      let minecraft_exists = terralith_deps
         .iter()
-        .find(|dep| dep.id == "minecraft".into())
-        .expect("expected `minecraft` to exist");
+        .any(|dep| dep.id == "minecraft".into());
+      let neoforge_exists = terralith_deps.iter().any(|dep| dep.id == "neoforge".into());
+      let forge_exists = terralith_deps.iter().any(|dep| dep.id == "forge".into());
 
-      true
+      minecraft_exists && neoforge_exists && forge_exists
     }))
   }
 }
