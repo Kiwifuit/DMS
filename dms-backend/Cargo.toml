@@ -4,20 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.7.7"
 denji = { path = "../denji", optional = true }
 packparse = { path = "../packparse", optional = true }
 modparser = { path = "../modparser", optional = true }
-
 modrinth = { path = "../modrinth", optional = true }
 hangar = { path = "../hangar", optional = true }
-
 temp-dir = { workspace = true, optional = true }
+
 log = { workspace = true, features = ["serde"] }
 # serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+tokio = { workspace = true, features = ["macros", "net", "rt-multi-thread"] }
 
+axum = "0.7.7"
 chrono = { version = "0.4.38", default-features = false, features = [
   "std",
   "clock",

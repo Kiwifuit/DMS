@@ -345,6 +345,7 @@ dependencies = [
  "serde_json",
  "temp-dir",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
