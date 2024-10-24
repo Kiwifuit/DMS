@@ -24,6 +24,7 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@types/bun": "^1.1.12",
     "babel-plugin-transform-imports": "^2.0.0",
     "prettier-plugin-tailwindcss": "^0.6.6"
   }
